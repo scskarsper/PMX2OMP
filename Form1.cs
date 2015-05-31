@@ -481,6 +481,43 @@ namespace PMXCheckerForOMP
             }
         }
 
+        void VSQ2CCS(string SourceVSQ,string TargetCCS)
+        {
+            LibMMM.VsqFile vf = LibMMM.VsqFile.Open(SourceVSQ);
+            int x = 0;
+            if (checkBox1.Checked)
+            {
+                int M = int.MaxValue;
+                for (int i = 0; i < vf.Tracks.Count; i++)
+                {
+                    try
+                    {
+
+                        foreach (LibMMM.vsqEvent td in vf.Tracks[i].events)
+                        {
+                            int a = (int)(td.info.Note / 12) - 2;
+                            int b = td.info.Note % 12;
+                            if (a < 1) continue;
+                            if (td.info.Length < 30) continue;
+                            M = Math.Min(M, td.time);
+                            break;
+                        }
+                    }
+                    catch { ;}
+                }
+                if (M < int.MaxValue)
+                {
+                    x = M;
+                }
+            }
+            string v=CCSBuilder.BuildCCS(vf,x);
+            System.IO.File.WriteAllText(TargetCCS, v, Encoding.UTF8);
+            if (System.IO.File.Exists(TargetCCS))
+            {
+                MessageBox.Show("CEVIO工程文件导出到："+TargetCCS+",拖动CCS文件到CharminStudio的嘴型条上即可导入嘴型", "VSQX2CCS");
+            }
+        }
+
         private void button3_Click(object sender, EventArgs e)
         {
             OpenFileDialog ofd = new OpenFileDialog();
@@ -502,6 +539,31 @@ namespace PMXCheckerForOMP
                     string SourceFile = ofd.FileName;
                     string TarFile = ofd.FileName.Substring(0, ofd.FileName.Length - 4) + "_Zipped.vmd";
                     ZipVmd(SourceFile, TarFile);
+                }
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Multiselect = false;
+            ofd.Title = "打开VSQ文件";
+            ofd.AddExtension = true;
+            ofd.DefaultExt = ".vsq";
+            ofd.Filter = "*.vsq|*.vsq";
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                textBox1.Text = "";
+                System.IO.FileInfo fi = new FileInfo(ofd.FileName);
+                if (fi.Extension.ToLower() != ".vsq")
+                {
+                    MessageBox.Show("转换器只处理VSQ文件！", "Format Error");
+                }
+                else
+                {
+                    string SourceFile = ofd.FileName;
+                    string TarFile = ofd.FileName.Substring(0, ofd.FileName.Length - 4) + "_Mouth.ccs";
+                    VSQ2CCS(SourceFile, TarFile);
                 }
             }
         }
